@@ -21,11 +21,19 @@ try:
         # Convert color image to numpy array
         color_image = np.asanyarray(color_frame.get_data())
 
-        # Show color image
-        cv2.namedWindow('Color Image', cv2.WINDOW_AUTOSIZE)
-        cv2.imshow('Color Image', color_image)
-        cv2.waitKey(1)
+        # Rotate the image by 90 degrees clockwise
+        rotated_image = cv2.rotate(color_image, cv2.ROTATE_90_CLOCKWISE)
+
+        # Show rotated color image
+        cv2.imshow('Color Image', rotated_image)
+
+        # Check for 'q' key to quit
+        key = cv2.waitKey(1)
+        if key & 0xFF == ord('q'):
+            break
 
 finally:
     # Stop streaming
     pipeline.stop()
+    cv2.destroyAllWindows()
+
