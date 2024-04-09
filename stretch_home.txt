@@ -1,0 +1,7 @@
+- Home robot: stretch_robot_home.py
+- Home gripper: stretch_gripper_home.py
+- Home wrist yaw: stretch_wrist_yaw_home.py
+- Home arm: stretch_arm_home.py
+- Home lift: stretch_lift_home.py
+- Stow robot: stretch_robot_stow.py
+
