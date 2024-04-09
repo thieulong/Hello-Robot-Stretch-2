@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import rospy
-from std_msgs.msg import String
+from std_msgs.msg import String, Bool
 from geometry_msgs.msg import PoseStamped
 from move_base_msgs.msg import MoveBaseActionResult
 
@@ -16,6 +16,7 @@ class Navigator:
         }
         
         self.goal_pub = rospy.Publisher("/move_base_simple/goal", PoseStamped, queue_size=1)
+        self.start_grasping_pub = rospy.Publisher("/start_grasp_action", Bool, queue_size=1)
         
         rospy.Subscriber("/move_base/destination", String, self.navigate_to_point)
         rospy.Subscriber("/move_base/result", MoveBaseActionResult, self.check_result)
@@ -40,12 +41,13 @@ class Navigator:
             rospy.logwarn("Point name not recognized.")
 
     def check_result(self, data):
-        if data.status:
-            status = data.status.text
-            if status == "Goal reached.":
-                rospy.loginfo("Goal reached.")
-            else:
-                rospy.loginfo("Goal not reached.")
+        if data.status.text == "Goal reached.":  
+            rospy.loginfo("Goal reached. Waiting for 2 seconds before starting the grasping action...")
+            rospy.sleep(2)  
+            self.start_grasping_pub.publish(True)  
+        else:
+            rospy.loginfo("Goal not reached or aborted.")
+
 
 if __name__ == '__main__':
     navigator = Navigator()

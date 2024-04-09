@@ -9,7 +9,7 @@ class GraspObjectController:
         rospy.init_node('grasp_object_controller')
         
         # Define the subscriber to the /start_grasp_object topic
-        self.subscriber = rospy.Subscriber('/start_grasp_object', Bool, self.callback_start_grasp)
+        self.subscriber = rospy.Subscriber('/start_grasp_action', Bool, self.callback_start_grasp)
         
         # Wait for the /grasp_object/trigger_grasp_object service to be available
         rospy.loginfo("Waiting for /grasp_object/trigger_grasp_object service...")
