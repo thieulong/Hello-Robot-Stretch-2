@@ -1,0 +1,1 @@
+roslaunch stretch_navigation navigation.launch map_yaml:=${HELLO_FLEET_PATH}/maps/riot_lab.yaml
