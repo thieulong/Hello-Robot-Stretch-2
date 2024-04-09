@@ -1,45 +1,41 @@
 #!/usr/bin/env python3
 
 import rospy
-from std_srvs.srv import Trigger, TriggerRequest
 from std_msgs.msg import Bool
+from std_srvs.srv import Trigger, TriggerRequest
 
-import hello_helpers.hello_misc as hm
-
-
-class KeyboardTeleopNode(hm.HelloNode):
-
+class GraspObjectController:
     def __init__(self):
-        hm.HelloNode.__init__(self)
-        self.rate = 10.0
-
-    def activate_grasp_callback(self, msg):
-        if msg.data:  # If the message is True, trigger the grasping
-            rospy.loginfo('Triggering grasp object operation')
-            try:
-                trigger_request = TriggerRequest()
-                trigger_result = self.trigger_grasp_object_service(trigger_request)
-                rospy.loginfo('Grasp operation result: %s', trigger_result.message)
-            except rospy.ServiceException as e:
-                rospy.logerr('Service call failed: %s', e)
-        else:
-            rospy.loginfo('Grasp operation was deactivated or stopped (received False)')
-
-    def main(self):
-        hm.HelloNode.main(self, 'keyboard_teleop', 'keyboard_teleop', wait_for_first_pointcloud=False)
-
+        rospy.init_node('grasp_object_controller')
+        
+        # Define the subscriber to the /start_grasp_object topic
+        self.subscriber = rospy.Subscriber('/start_grasp_object', Bool, self.callback_start_grasp)
+        
+        # Wait for the /grasp_object/trigger_grasp_object service to be available
+        rospy.loginfo("Waiting for /grasp_object/trigger_grasp_object service...")
         rospy.wait_for_service('/grasp_object/trigger_grasp_object')
-        rospy.loginfo('Connected to /grasp_object/trigger_grasp_object.')
-        self.trigger_grasp_object_service = rospy.ServiceProxy('/grasp_object/trigger_grasp_object', Trigger)
+        self.grasp_object_service = rospy.ServiceProxy('/grasp_object/trigger_grasp_object', Trigger)
+        rospy.loginfo("Connected to /grasp_object/trigger_grasp_object service.")
 
-        rospy.Subscriber('/activate_grasp_object', Bool, self.activate_grasp_callback)
-
-        rospy.spin()
-
+    def callback_start_grasp(self, msg):
+        # Check if the received message is True
+        if msg.data:
+            rospy.loginfo("Received signal to start grasping.")
+            try:
+                # Call the /grasp_object/trigger_grasp_object service
+                response = self.grasp_object_service(TriggerRequest())
+                if response.success:
+                    rospy.loginfo("Grasping operation succeeded: %s", response.message)
+                else:
+                    rospy.loginfo("Grasping operation failed: %s", response.message)
+            except rospy.ServiceException as e:
+                rospy.logerr("Service call failed: %s", e)
+        else:
+            rospy.loginfo("Received signal to stop or do not grasp.")
 
 if __name__ == '__main__':
     try:
-        node = KeyboardTeleopNode()
-        node.main()
+        grasp_object_controller = GraspObjectController()
+        rospy.spin()  # Keep the node running until interrupted
     except rospy.ROSInterruptException:
         pass
