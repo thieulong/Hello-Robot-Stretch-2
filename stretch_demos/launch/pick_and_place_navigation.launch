@@ -1,7 +1,7 @@
 <launch>
 
   <!-- Shared Arguments -->
-  <arg name="map_yaml"                doc="filepath to previously captured map (required)" />
+  <arg name="map_yaml"        default="$(env HELLO_FLEET_PATH)/maps/riot_lab.yaml" doc="filepath to previously captured map (required)" />
   <arg name="debug_directory" default="$(env HELLO_FLEET_PATH)/debug/" doc="path to directory where debug planning images/logs are stored" />
   <arg name="dryrun"          default="false"                          doc="whether run perception/planning without actually moving" />
   <arg name="rviz"            default="true" doc="whether to show Rviz" />
