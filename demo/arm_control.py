@@ -4,7 +4,7 @@ import rospy
 from std_msgs.msg import Float32
 import stretch_body.arm
 
-class StretchLiftController:
+class StretchArmController:
     def __init__(self):
         rospy.init_node('stretch_arm_controller')
 
@@ -31,7 +31,7 @@ class StretchLiftController:
         self.robot.stop()
 
 if __name__ == '__main__':
-    controller = StretchLiftController()
+    controller = StretchArmController()
     try:
         controller.run()
     except rospy.ROSInterruptException:
