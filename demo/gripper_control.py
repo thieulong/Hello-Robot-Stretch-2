@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import rospy
-import time
 from std_msgs.msg import Bool, Float32
 import stretch_body.robot
 import stretch_body.arm
