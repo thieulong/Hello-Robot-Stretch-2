@@ -1,54 +1,44 @@
 #!/usr/bin/env python3
 
 import rospy
-import stretch_body.robot
-import stretch_body.end_of_arm
+from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
-class StretchGripperController:
+class WristYawController:
     def __init__(self):
-        # Initialize the ROS node
-        rospy.init_node('stretch_gripper_controller')
+        rospy.init_node('wrist_yaw_controller')
 
-        # Initialize the robot
-        self.robot = stretch_body.robot.Robot()
-        self.robot.startup()
+        # Publisher to send commands to the wrist yaw joint
+        self.joint_pub = rospy.Publisher('/joint_trajectory_controller/command', JointTrajectory, queue_size=10)
 
-        # Initialize the end of arm tool
-        self.eoa = stretch_body.end_of_arm.EndOfArm(self.robot)
+    def set_wrist_yaw(self, angle):
+        '''
+        Function to set the wrist yaw joint to a specific angle.
+        :param angle: Desired angle in radians.
+        '''
+        # Create a JointTrajectory message
+        msg = JointTrajectory()
+        msg.joint_names = ['joint_wrist_yaw']
 
-    def open_gripper(self):
-        # Open the gripper
-        self.eoa.motors['stretch_gripper'].move_to(0.05)  # Adjust value as needed for your gripper
-        self.eoa.push_command()
+        # Create a JointTrajectoryPoint to define movement
+        point = JointTrajectoryPoint()
+        point.positions = [angle]
+        point.time_from_start = rospy.Duration(1.0)  # Set duration for the movement
 
-    def close_gripper(self):
-        # Close the gripper
-        self.eoa.motors['stretch_gripper'].move_to(0.00)  # Adjust value to close gripper completely
-        self.eoa.push_command()
-
-    def move_pitch(self, angle_radians):
-        # Move the gripper pitch joint
-        self.eoa.motors['wrist_pitch'].move_to(angle_radians)  # Set angle in radians
-        self.eoa.push_command()
+        # Assign the point to the trajectory message
+        msg.points = [point]
+        self.joint_pub.publish(msg)
+        rospy.loginfo("Setting wrist yaw to {:.2f} radians".format(angle))
 
     def run(self):
-        # Example usage
+        # Example: Set the wrist yaw to 0.5 radians
+        rate = rospy.Rate(1)  # 1 Hz
         while not rospy.is_shutdown():
-            self.open_gripper()
-            rospy.sleep(2)
-            self.close_gripper()
-            rospy.sleep(2)
-            self.move_pitch(0.3)  # Move pitch to 0.3 radians
-            rospy.sleep(2)
-
-    def shutdown(self):
-        self.robot.stop()
+            self.set_wrist_yaw(0.5)  # Adjust this value as needed for your application
+            rate.sleep()
 
 if __name__ == '__main__':
-    controller = StretchGripperController()
+    controller = WristYawController()
     try:
         controller.run()
     except rospy.ROSInterruptException:
-        pass
-    finally:
-        controller.shutdown()
+        rospy.loginfo("WristYawController node terminated.")
