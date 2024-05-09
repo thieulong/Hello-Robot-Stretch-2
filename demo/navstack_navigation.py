@@ -7,7 +7,7 @@ from move_base_msgs.msg import MoveBaseActionResult
 
 class Navigator:
     def __init__(self):
-        rospy.init_node('navigator_node')
+        rospy.init_node('navstack_navigation')
 
         self.points = {
             "point_1": {"frame_id": "map", "position": {"x": 1.474995732307434, "y": -0.7403491735458374, "z": 0.0}, "orientation": {"x": 0.0, "y": 0.0, "z": 0.09095735556819132, "w": 0.9958547883441851}},
