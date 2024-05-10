@@ -5,7 +5,7 @@ from std_msgs.msg import Float32MultiArray
 import math
 from tf.transformations import euler_from_quaternion, quaternion_from_euler
 
-class WayPointsNavigation:
+class StretchNavigation:
     def __init__(self):
         rospy.init_node('waypoints_navigation', anonymous=True)
 
@@ -21,6 +21,10 @@ class WayPointsNavigation:
         self.pose_y = 0.0
         self.pose_yaw = 0.0
 
+        # Tolerances
+        self.linear_tolerance = 0.05  # Tolerance for distance to goal (in meters)
+        self.angular_tolerance = 0.05  # Tolerance for angle to goal (in radians)
+
     def update_pose(self, msg):
         position = msg.pose.pose.position
         orientation = msg.pose.pose.orientation
@@ -33,8 +37,8 @@ class WayPointsNavigation:
         quaternion = (orientation.x, orientation.y, orientation.z, orientation.w)
         _, _, self.pose_yaw = euler_from_quaternion(quaternion)
 
-        rospy.loginfo(f"Current pose: {self.pose_x, self.pose_y}")
-        rospy.loginfo(f"Current yaw: {self.pose_yaw}")
+        rospy.loginfo(f"Current pose: {self.pose_x:.3f}, {self.pose_y:.3f}")
+        rospy.loginfo(f"Current yaw: {self.pose_yaw:.3f}")
 
     def move_to_goal(self, goal):
         # Goal coordinates (x, y) and quaternion (z, w)
@@ -47,21 +51,26 @@ class WayPointsNavigation:
         goal_quaternion = (0.0, 0.0, goal_z, goal_w)
         _, _, goal_yaw = euler_from_quaternion(goal_quaternion)
 
-        rospy.loginfo(f"Received goal: x = {goal_x}, y = {goal_y}, z = {goal_z}, w = {goal_w}")
-        rospy.loginfo(f"Goal yaw: {goal_yaw}")
+        rospy.loginfo(f"Received goal: x = {goal_x:.3f}, y = {goal_y:.3f}, z = {goal_z:.3f}, w = {goal_w:.3f}")
+        rospy.loginfo(f"Goal yaw: {goal_yaw:.3f}")
 
-        # Rotate to face the goal
+        # Rotate to face the goal direction
         goal_angle = math.atan2(goal_y - self.pose_y, goal_x - self.pose_x)
-        while abs(goal_angle - self.pose_yaw) > 0.01:
+        rospy.loginfo(f"Goal angle: {goal_angle:.3f}")
+        while abs(goal_angle - self.pose_yaw) > self.angular_tolerance:
             velocity_msg = Twist()
-            velocity_msg.angular.z = 2.0 * (goal_angle - self.pose_yaw)
+            velocity_msg.angular.z = 0.1 * (goal_angle - self.pose_yaw)
             self.velocity_publisher.publish(velocity_msg)
             self.rate.sleep()
 
+        # Stop rotation
+        velocity_msg.angular.z = 0
+        self.velocity_publisher.publish(velocity_msg)
+
         # Move straight to the goal position
-        while math.sqrt(pow((goal_x - self.pose_x), 2) + pow((goal_y - self.pose_y), 2)) > 0.1:
+        while math.sqrt(pow((goal_x - self.pose_x), 2) + pow((goal_y - self.pose_y), 2)) > self.linear_tolerance:
             velocity_msg = Twist()
-            velocity_msg.linear.x = 0.5 * math.sqrt(pow((goal_x - self.pose_x), 2) + pow((goal_y - self.pose_y), 2))
+            velocity_msg.linear.x = 0.1 * math.sqrt(pow((goal_x - self.pose_x), 2) + pow((goal_y - self.pose_y), 2))
             velocity_msg.angular.z = 0
             self.velocity_publisher.publish(velocity_msg)
             self.rate.sleep()
@@ -71,9 +80,9 @@ class WayPointsNavigation:
         velocity_msg.linear.x = 0
         self.velocity_publisher.publish(velocity_msg)
 
-        # Rotate to the final orientation
-        while abs(goal_yaw - self.pose_yaw) > 0.01:
-            velocity_msg.angular.z = 2.0 * (goal_yaw - self.pose_yaw)
+        # Rotate to the final orientation (goal_yaw)
+        while abs(goal_yaw - self.pose_yaw) > self.angular_tolerance:
+            velocity_msg.angular.z = 0.5 * (goal_yaw - self.pose_yaw)
             self.velocity_publisher.publish(velocity_msg)
             self.rate.sleep()
 
@@ -83,7 +92,7 @@ class WayPointsNavigation:
 
 if __name__ == '__main__':
     try:
-        x = WayPointsNavigation()
+        x = StretchNavigation()
         rospy.spin()
     except rospy.ROSInterruptException:
         pass
