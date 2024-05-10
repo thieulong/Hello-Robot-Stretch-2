@@ -3,7 +3,7 @@ import rospy
 import tf
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist, Pose, PoseStamped, Point, Quaternion
-from std_msgs.msg import Float32MultiArray
+from std_msgs.msg import Float32MultiArray, String
 from tf.transformations import euler_from_quaternion, quaternion_from_euler
 import math
 
@@ -12,7 +12,8 @@ class StretchNavigation:
         rospy.init_node('waypoints_navigation', anonymous=True)
 
         self.velocity_publisher = rospy.Publisher('/stretch/cmd_vel', Twist, queue_size=10)
-
+        self.status_publisher = rospy.Publisher('/stretch/status', String, queue_size=10)
+        
         self.odom_subscriber = rospy.Subscriber('/odom', Odometry, self.update_odometry_pose)
         self.goal_subscriber = rospy.Subscriber('/destination', Float32MultiArray, self.move_to_goal)
 
@@ -33,6 +34,15 @@ class StretchNavigation:
         self.linear_tolerance = 0.1  # Tolerance for distance to goal (in meters)
         self.angular_tolerance = 0.1  # Tolerance for angle to goal (in radians)
 
+<<<<<<< HEAD
+=======
+    def publish_status(self, status_message):
+        status_msg = String()
+        status_msg.data = status_message
+        self.status_publisher.publish(status_msg)
+        rospy.loginfo(f"Status published: {status_message}")
+
+>>>>>>> 9ed1cfff9ca07407c9bbfd470ccd7c7f35675bf6
     def update_odometry_pose(self, msg):
         position = msg.pose.pose.position
         orientation = msg.pose.pose.orientation
@@ -88,6 +98,12 @@ class StretchNavigation:
 
         goal_angle = math.atan2(goal_y - self.global_y, goal_x - self.global_x)
         rospy.loginfo(f"Goal angle: {goal_angle:.3f}")
+<<<<<<< HEAD
+=======
+        
+        self.publish_status("navigating")
+
+>>>>>>> 9ed1cfff9ca07407c9bbfd470ccd7c7f35675bf6
         angle_error = abs(goal_angle - self.global_yaw)
         while angle_error > self.angular_tolerance:
             rospy.loginfo(f"Angle error: {angle_error}")
@@ -124,6 +140,11 @@ class StretchNavigation:
         velocity_msg.angular.z = 0
         self.velocity_publisher.publish(velocity_msg)
 
+<<<<<<< HEAD
+=======
+        self.publish_status("destination reached")
+
+>>>>>>> 9ed1cfff9ca07407c9bbfd470ccd7c7f35675bf6
 if __name__ == '__main__':
     try:
         x = StretchNavigation()
