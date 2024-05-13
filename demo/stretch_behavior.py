@@ -28,7 +28,7 @@ class StretchBehavior:
     def handle_lift_object(self, data):
         if data.data:
             rospy.loginfo("Received signal to lift object.")
-            self.gripper_pub.publish(Float32(-10.0))
+            self.robot.end_of_arm.move_to('stretch_gripper', -20.0)
             self.lift_pub.publish(Float32(1.05))
             self.arm_pub.publish(Float32(0.0))
             self.robot.end_of_arm.move_to('wrist_yaw', 3.1)
