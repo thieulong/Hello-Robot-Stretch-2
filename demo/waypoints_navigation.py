@@ -19,7 +19,6 @@ class StretchNavigation:
 
         self.rate = rospy.Rate(10)
 
-        # Initialize pose variables
         self.odom_x = 0.0
         self.odom_y = 0.0
         self.odom_yaw = 0.0
@@ -27,12 +26,10 @@ class StretchNavigation:
         self.global_y = 0.0
         self.global_yaw = 0.0
 
-        # TF listener setup
         self.tf_listener = tf.TransformListener()
 
-        # Tolerances
-        self.linear_tolerance = 0.1  # Tolerance for distance to goal (in meters)
-        self.angular_tolerance = 0.1  # Tolerance for angle to goal (in radians)
+        self.linear_tolerance = 0.2  
+        self.angular_tolerance = 0.1  
 
     def publish_status(self, status_message):
         status_msg = String()
@@ -44,11 +41,9 @@ class StretchNavigation:
         position = msg.pose.pose.position
         orientation = msg.pose.pose.orientation
 
-        # Update current position (in odometry frame)
         self.odom_x = position.x
         self.odom_y = position.y
 
-        # Convert quaternion to yaw
         quaternion = (orientation.x, orientation.y, orientation.z, orientation.w)
         _, _, self.odom_yaw = euler_from_quaternion(quaternion)
 
@@ -58,7 +53,7 @@ class StretchNavigation:
         self.update_global_pose()
 
     def update_global_pose(self):
-        # Create a pose in the odom frame
+
         odom_pose = PoseStamped()
         odom_pose.header.frame_id = "odom"
         odom_pose.pose = Pose(
@@ -67,7 +62,6 @@ class StretchNavigation:
         )
 
         try:
-            # Transform the odom pose to the global map frame
             global_pose = self.tf_listener.transformPose("map", odom_pose)
             self.global_x = global_pose.pose.position.x
             self.global_y = global_pose.pose.position.y
@@ -103,7 +97,7 @@ class StretchNavigation:
             rospy.loginfo(f"Angle error: {angle_error}")
             self.update_global_pose()
             velocity_msg = Twist()
-            velocity_msg.angular.z = 0.2 * (goal_angle - self.global_yaw)
+            velocity_msg.angular.z = 0.5 * (goal_angle - self.global_yaw)
             self.velocity_publisher.publish(velocity_msg)
             angle_error = abs(goal_angle - self.global_yaw)
             self.rate.sleep()
@@ -115,7 +109,7 @@ class StretchNavigation:
             rospy.loginfo(f"Distance error: {math.sqrt(pow((goal_x - self.global_x), 2) + pow((goal_y - self.global_y), 2))}")
             self.update_global_pose()
             velocity_msg = Twist()
-            velocity_msg.linear.x = 0.1 * math.sqrt(pow((goal_x - self.global_x), 2) + pow((goal_y - self.global_y), 2))
+            velocity_msg.linear.x = 0.2 * math.sqrt(pow((goal_x - self.global_x), 2) + pow((goal_y - self.global_y), 2))
             velocity_msg.angular.z = 0
             self.velocity_publisher.publish(velocity_msg)
             self.rate.sleep()
@@ -127,7 +121,7 @@ class StretchNavigation:
         while abs(goal_yaw - self.global_yaw) > self.angular_tolerance:
             rospy.loginfo(f"Orientation error: {abs(goal_yaw - self.global_yaw)}")
             self.update_global_pose()
-            velocity_msg.angular.z = 0.2 * (goal_yaw - self.global_yaw)
+            velocity_msg.angular.z = 0.5 * (goal_yaw - self.global_yaw)
             self.velocity_publisher.publish(velocity_msg)
             self.rate.sleep()
 
