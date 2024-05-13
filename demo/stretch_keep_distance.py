@@ -26,7 +26,7 @@ class Avoider(Node):
         self.twist.angular.y = 0.0
         self.twist.angular.z = 0.0
 
-        self.publisher_ = self.create_publisher(Twist, '/stretch/cmd_vel', 1) #/stretch_diff_drive_controller/cmd_vel for gazebo
+        self.publisher_ = self.create_publisher(Twist, '/stretch/cmd_vel', 1) 
         self.subscriber_ = self.create_subscription(LaserScan, '/scan_filtered', self.lidar_callback, 10)
 
     def set_speed(self, lin_vel, rot_vel):

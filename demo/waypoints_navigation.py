@@ -5,7 +5,9 @@ from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist, Pose, PoseStamped, Point, Quaternion
 from std_msgs.msg import Float32MultiArray, String
 from tf.transformations import euler_from_quaternion, quaternion_from_euler
+from sensor_msgs.msg import LaserScan
 import math
+import numpy
 
 class StretchNavigation:
     def __init__(self):
@@ -16,6 +18,7 @@ class StretchNavigation:
         
         self.odom_subscriber = rospy.Subscriber('/odom', Odometry, self.update_odometry_pose)
         self.goal_subscriber = rospy.Subscriber('/destination', Float32MultiArray, self.move_to_goal)
+        self.lidar_subscriber = rospy.Subscriber('/scan_filtered', LaserScan, self.lidar_callback)
 
         self.rate = rospy.Rate(10)
 
@@ -30,6 +33,9 @@ class StretchNavigation:
 
         self.linear_tolerance = 0.2  
         self.angular_tolerance = 0.1  
+
+        self.stop_distance = 0.3
+        self.front_distance = 0
 
     def publish_status(self, status_message):
         status_msg = String()
@@ -75,6 +81,17 @@ class StretchNavigation:
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
             rospy.logwarn("TF lookup failed")
 
+    def lidar_callback(self, msg):
+        angles = numpy.linspace(msg.angle_min, msg.angle_max, len(msg.ranges))
+        all_points = [r if (not math.isnan(r)) else numpy.inf for r in msg.ranges]
+        front_points = [r * math.sin(theta) if (theta < -2.5 or theta > 2.5) else numpy.inf for r,theta in zip(msg.ranges, angles)]
+        front_ranges = [r if abs(y) < self.extent else numpy.inf for r,y in zip(msg.ranges, front_points)]
+        min_front = min(front_ranges)
+        min_all = min(all_points)
+
+        self.front_distance = min_front
+        rospy.loginfo(f"Front min distance: {self.front_distance}")
+
     def move_to_goal(self, goal):
         goal_x = goal.data[0]
         goal_y = goal.data[1]
@@ -109,7 +126,10 @@ class StretchNavigation:
             rospy.loginfo(f"Distance error: {math.sqrt(pow((goal_x - self.global_x), 2) + pow((goal_y - self.global_y), 2))}")
             self.update_global_pose()
             velocity_msg = Twist()
-            velocity_msg.linear.x = 0.2 * math.sqrt(pow((goal_x - self.global_x), 2) + pow((goal_y - self.global_y), 2))
+            if self.front_distance < self.stop_distance:
+                velocity_msg.linear.x = 0
+            else:
+                velocity_msg.linear.x = 0.2 * math.sqrt(pow((goal_x - self.global_x), 2) + pow((goal_y - self.global_y), 2))
             velocity_msg.angular.z = 0
             self.velocity_publisher.publish(velocity_msg)
             self.rate.sleep()
