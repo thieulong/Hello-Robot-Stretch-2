@@ -16,6 +16,7 @@ class StretchBehavior:
         rospy.Subscriber("/lift_object", Bool, self.handle_lift_object)
         rospy.Subscriber("/release_object", Bool, self.handle_release_object)
         rospy.Subscriber("/give_object", Bool, self.handle_give_object)
+        rospy.Subscriber("/grasp_detect", Bool, self.handle_grasping_detection)
 
         self.lift_object_pub = rospy.Publisher("/lift_object", Bool, queue_size=1)
         self.release_object_pub = rospy.Publisher("/release_object", Bool, queue_size=1)
@@ -56,6 +57,11 @@ class StretchBehavior:
             time.sleep(5)
             self.robot.end_of_arm.move_to('stretch_gripper', 20.0)
             rospy.loginfo("Object given!")
+
+    def handle_grasping_detection(self, data):
+        if data.data:
+            self.robot.end_of_arm.move_to('stretch_gripper', 20.0)
+            rospy.loginfo("Object released!")
 
     def run(self):
         rospy.spin()
