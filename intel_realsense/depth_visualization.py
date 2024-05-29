@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
 # Load the depth array from the file
-depth_image = np.loadtxt('depth-array-1.txt', dtype=int)
+depth_image = np.loadtxt('depth-array-2.txt', dtype=int)
 
 # Get the dimensions of the depth image
 height, width = depth_image.shape

@@ -66,7 +66,7 @@ try:
 
         cv2.imshow('RealSense', depth_colormap)
 
-        np.savetxt("depth_array.txt", depth_image, fmt="%d")
+        np.savetxt("depth-array-3.txt", depth_image, fmt="%d")
 
         key = cv2.waitKey(1)
         if key & 0xFF == ord('q'):
