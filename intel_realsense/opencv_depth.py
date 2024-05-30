@@ -62,7 +62,7 @@ try:
 
         cv2.namedWindow('RealSense', cv2.WINDOW_AUTOSIZE)
 
-        np.savetxt("depth-array-4.txt", depth_image, fmt="%d")
+        # np.savetxt("depth-array-4.txt", depth_image, fmt="%d")
 
         cv2.imshow('RealSense', depth_colormap)
 
