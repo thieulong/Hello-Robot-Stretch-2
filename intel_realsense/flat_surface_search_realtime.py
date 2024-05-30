@@ -12,6 +12,8 @@ from scipy.ndimage import label, find_objects
 
 # Define the margin for ignoring NaN regions near the corners
 margin = 20
+nan_tolerant = 20
+crop_percentage = 0.1  # 10% crop on each side
 
 # Step 1: Define Flat Area Search Function
 def flat_area_search(depth_image):
@@ -68,6 +70,11 @@ def flat_area_search(depth_image):
         y1, x1 = largest_region[0].start, largest_region[1].start
         y2, x2 = largest_region[0].stop, largest_region[1].stop
 
+        # Crop the left and right sides by the specified percentage
+        crop_width = int((x2 - x1) * crop_percentage)
+        x1 += crop_width
+        x2 -= crop_width
+
         # Count the number of NaN values in the largest region
         largest_region_array = depth_image[y1:y2, x1:x2]
         nan_count = np.isnan(largest_region_array).sum()
@@ -91,7 +98,7 @@ def flat_area_search(depth_image):
                 ny2, nx2 = nan_region_slice[0].stop, nan_region_slice[1].stop
 
                 # Ignore NaN regions with width or height < 10 and near corners
-                if nan_region_shape[0] >= 10 and nan_region_shape[1] >= 10:
+                if nan_region_shape[0] >= nan_tolerant and nan_region_shape[1] >= nan_tolerant:
                     if not ((ny1 < margin and nx1 < margin) or (ny1 < margin and nx2 > largest_region_array.shape[1] - margin) or
                             (ny2 > largest_region_array.shape[0] - margin and nx1 < margin) or (ny2 > largest_region_array.shape[0] - margin and nx2 > largest_region_array.shape[1] - margin)):
                         valid_nan_regions += 1

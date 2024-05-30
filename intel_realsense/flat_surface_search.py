@@ -4,7 +4,10 @@ from scipy.ndimage import label, find_objects
 from mpl_toolkits.mplot3d import Axes3D
 
 # Define the margin for ignoring NaN regions near the corners
-margin = 30
+margin = 10
+nan_tolerant = 20
+nan_threshold = 10
+crop_percentage = 0.1  # 10% crop on each side
 
 # Step 1: Load and Prepare Data
 depth_image = np.loadtxt('depth-array-4.txt', dtype=int)
@@ -76,44 +79,42 @@ for region_slice in find_objects(labeled_array):
             largest_region_size = region_size
             largest_region = region_slice
 
-# Display the largest region
+# Process the largest region
 if largest_region is not None:
     print(f"Largest region size: {largest_region_size}")
 
-    fig, ax = plt.subplots()
-    ax.imshow(depth_image, cmap='viridis')
-
     y1, x1 = largest_region[0].start, largest_region[1].start
     y2, x2 = largest_region[0].stop, largest_region[1].stop
-    rect = plt.Rectangle((x1, y1), x2-x1, y2-y1, edgecolor='red', facecolor='none')
-    ax.add_patch(rect)
 
-    plt.show()
+    # Crop the left and right sides by the specified percentage
+    crop_width = int((x2 - x1) * crop_percentage)
+    x1 += crop_width
+    x2 -= crop_width
 
     # Print the shape and indices of the largest flat surface
     largest_region_shape = (y2 - y1, x2 - x1)
-    print(f"Shape of the largest flat surface: {largest_region_shape}")
-    print(f"Start index: ({y1}, {x1})")
-    print(f"End index: ({y2}, {x2})")
+    print(f"Shape of the cropped flat surface: {largest_region_shape}")
+    print(f"Cropped region start index: ({y1, x1})")
+    print(f"Cropped region end index: ({y2, x2})")
 
-    # Count and print the number of NaN values in the largest region
+    # Count and print the number of NaN values in the cropped region
     largest_region_array = depth_image[y1:y2, x1:x2]
     nan_count = np.isnan(largest_region_array).sum()
-    print(f"Number of NaN values in the largest region: {nan_count}")
+    print(f"Number of NaN values in the cropped region: {nan_count}")
 
-    # Count and print the total number of values in the largest region
+    # Count and print the total number of values in the cropped region
     total_values = largest_region_array.size
-    print(f"Total number of values in the largest region: {total_values}")
+    print(f"Total number of values in the cropped region: {total_values}")
 
-    # Calculate and print the percentage of NaN values in the largest region
+    # Calculate and print the percentage of NaN values in the cropped region
     nan_percentage = (nan_count / total_values) * 100
-    print(f"Percentage of NaN values in the largest region: {nan_percentage:.2f}%")
+    print(f"Percentage of NaN values in the cropped region: {nan_percentage:.2f}%")
 
     # Decide whether to select the region based on the NaN percentage
-    if nan_percentage > 10:
-        print("The percentage of NaN values is above 10%. The largest region will not be selected.")
+    if nan_percentage > nan_threshold:
+        print(f"The percentage of NaN values is above {nan_threshold}%. The cropped region will not be selected.")
     else:
-        # Step 6: 3D Scatter Plot of the Largest Region
+        # Step 6: 3D Scatter Plot of the Cropped Region
         y, x = np.indices(largest_region_array.shape)
         y = y + largest_region[0].start
         x = x + largest_region[1].start
@@ -140,7 +141,7 @@ if largest_region is not None:
 
         plt.show()
 
-        # Step 7: Detect and Print NaN Regions within the Largest Region
+        # Step 7: Detect and Print NaN Regions within the Cropped Region
         nan_mask = np.isnan(largest_region_array)
         labeled_nan_array, num_nan_features = label(nan_mask)
         print(f"Number of NaN regions after filtering: {num_nan_features}")
@@ -153,8 +154,8 @@ if largest_region is not None:
             ny1, nx1 = nan_region_slice[0].start, nan_region_slice[1].start
             ny2, nx2 = nan_region_slice[0].stop, nan_region_slice[1].stop
 
-            # Ignore NaN regions with width or height < 10 and near corners
-            if nan_region_shape[0] >= 10 and nan_region_shape[1] >= 10:
+            # Ignore NaN regions with width or height < n and near corners
+            if nan_region_shape[0] >= nan_tolerant and nan_region_shape[1] >= nan_tolerant:
                 if not ((ny1 < margin and nx1 < margin) or (ny1 < margin and nx2 > largest_region_array.shape[1] - margin) or
                         (ny2 > largest_region_array.shape[0] - margin and nx1 < margin) or (ny2 > largest_region_array.shape[0] - margin and nx2 > largest_region_array.shape[1] - margin)):
                     print(f"NaN region shape: {nan_region_shape}")
@@ -169,8 +170,8 @@ if largest_region is not None:
 
         # Check if there are any valid NaN regions
         if valid_nan_regions > 0:
-            print("Valid NaN regions found. The largest region will not be selected.")
+            print("Valid NaN regions found. The cropped region will not be selected.")
         else:
-            print("No valid NaN regions found. The largest region is selected.")
+            print("No valid NaN regions found. The cropped region is selected.")
 else:
     print("No valid flat regions found.")
