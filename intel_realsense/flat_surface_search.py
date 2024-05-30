@@ -7,7 +7,7 @@ from mpl_toolkits.mplot3d import Axes3D
 margin = 30
 
 # Step 1: Load and Prepare Data
-depth_image = np.loadtxt('depth-array-3.txt', dtype=int)
+depth_image = np.loadtxt('depth-array-4.txt', dtype=int)
 
 # Convert the depth image to float to handle NaN values
 depth_image = depth_image.astype(float)
@@ -18,7 +18,7 @@ depth_image[depth_image == 0] = np.nan
 print(f"Loaded depth array of shape: {depth_image.shape}")
 
 # Step 2: Define Flat Region Detection
-def is_flat_surface(depth_image, x, y, threshold=1):
+def is_flat_surface(depth_image, x, y, threshold=3):
     current_value = depth_image[y, x]
     if np.isnan(current_value):
         return False
@@ -110,7 +110,7 @@ if largest_region is not None:
     print(f"Percentage of NaN values in the largest region: {nan_percentage:.2f}%")
 
     # Decide whether to select the region based on the NaN percentage
-    if nan_percentage > 40:
+    if nan_percentage > 10:
         print("The percentage of NaN values is above 10%. The largest region will not be selected.")
     else:
         # Step 6: 3D Scatter Plot of the Largest Region

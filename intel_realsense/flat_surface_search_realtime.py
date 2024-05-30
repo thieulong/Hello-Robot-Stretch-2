@@ -15,9 +15,6 @@ margin = 20
 
 # Step 1: Define Flat Area Search Function
 def flat_area_search(depth_image):
-    # Print the largest depth value in the array
-    max_depth_value = np.nanmax(depth_image)
-    print(f"Largest depth value in the array: {max_depth_value:.2f}")
 
     # Convert the depth image to float to handle NaN values
     depth_image = depth_image.astype(float)

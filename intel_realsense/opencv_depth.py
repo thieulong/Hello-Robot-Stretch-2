@@ -54,8 +54,6 @@ try:
         # Apply colormap on depth image (image must be converted to 8-bit per pixel first)
         depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)
 
-        print(depth_image)
-
         print(f"Depth image shape: {depth_image.shape}")
         print(f"Total dept value: {np.size(depth_image)}")
         print(f"Min depth value: {np.min(depth_image)}")
@@ -63,6 +61,8 @@ try:
         print(f"Mean depth value: {np.mean(depth_image)}")
 
         cv2.namedWindow('RealSense', cv2.WINDOW_AUTOSIZE)
+
+        np.savetxt("depth-array-4.txt", depth_image, fmt="%d")
 
         cv2.imshow('RealSense', depth_colormap)
 
