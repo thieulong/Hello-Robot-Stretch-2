@@ -86,10 +86,24 @@ class StretchNavigation:
         all_points = [r if (not math.isnan(r)) else numpy.inf for r in msg.ranges]
         front_points = [r * math.sin(theta) if (theta < -2.5 or theta > 2.5) else numpy.inf for r,theta in zip(msg.ranges, angles)]
         front_ranges = [r if abs(y) < self.extent else numpy.inf for r,y in zip(msg.ranges, front_points)]
-        min_front = min(front_ranges)
-        min_all = min(all_points)
 
-        self.front_distance = min_front
+        middle_index = len(front_ranges) // 2
+        middle_value = front_ranges[middle_index]
+        i = 1
+
+        while numpy.isinf(middle_value):
+            left_index = middle_index - i
+            if left_index >= 0:
+                middle_value = front_ranges[left_index]
+
+            if numpy.isinf(middle_value):
+                right_index = middle_index + i
+                if right_index < len(front_ranges):
+                    middle_value = front_ranges[right_index]
+
+            i += 1
+
+        self.front_distance = middle_value
         rospy.loginfo(f"Front min distance: {self.front_distance}")
 
     def move_to_goal(self, goal):
