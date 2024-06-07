@@ -2,7 +2,7 @@
 import rospy
 import tf
 from nav_msgs.msg import Odometry
-from geometry_msgs.msg import Twist, Pose, PoseStamped, Point, Quaternion
+from geometry_msgs.msg import Twist, Pose, PoseStamped, Point, Quaternion, Pose
 from std_msgs.msg import Float32MultiArray, String
 from tf.transformations import euler_from_quaternion, quaternion_from_euler
 from sensor_msgs.msg import LaserScan
@@ -17,10 +17,13 @@ class StretchNavigation:
         self.status_publisher = rospy.Publisher('/stretch/status', String, queue_size=10)
         
         self.odom_subscriber = rospy.Subscriber('/odom', Odometry, self.update_odometry_pose)
-        self.goal_subscriber = rospy.Subscriber('/destination', Float32MultiArray, self.move_to_goal)
+        self.goal_subscriber = rospy.Subscriber('/destination', Pose, self.move_to_goal)
         self.lidar_subscriber = rospy.Subscriber('/scan_filtered', LaserScan, self.lidar_callback)
 
         self.rate = rospy.Rate(10)
+
+        self.width = 1
+        self.extent = self.width / 2.0
 
         self.odom_x = 0.0
         self.odom_y = 0.0
@@ -31,8 +34,8 @@ class StretchNavigation:
 
         self.tf_listener = tf.TransformListener()
 
-        self.linear_tolerance = 0.2  
-        self.angular_tolerance = 0.1  
+        self.linear_tolerance = 0.22
+        self.angular_tolerance = 0.01  
 
         self.stop_distance = 0.3
         self.front_distance = 0
@@ -53,8 +56,8 @@ class StretchNavigation:
         quaternion = (orientation.x, orientation.y, orientation.z, orientation.w)
         _, _, self.odom_yaw = euler_from_quaternion(quaternion)
 
-        rospy.loginfo(f"Odometry pose: {self.odom_x:.3f}, {self.odom_y:.3f}")
-        rospy.loginfo(f"Odometry yaw: {self.odom_yaw:.3f}")
+        # rospy.loginfo(f"Odometry pose: {self.odom_x:.3f}, {self.odom_y:.3f}")
+        # rospy.loginfo(f"Odometry yaw: {self.odom_yaw:.3f}")
 
         self.update_global_pose()
 
@@ -76,8 +79,8 @@ class StretchNavigation:
                  global_pose.pose.orientation.z, global_pose.pose.orientation.w)
             )
 
-            rospy.loginfo(f"Global pose: {self.global_x:.3f}, {self.global_y:.3f}")
-            rospy.loginfo(f"Global yaw: {self.global_yaw:.3f}")
+            # rospy.loginfo(f"Global pose: {self.global_x:.3f}, {self.global_y:.3f}")
+            # rospy.loginfo(f"Global yaw: {self.global_yaw:.3f}")
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
             rospy.logwarn("TF lookup failed")
 
@@ -93,10 +96,10 @@ class StretchNavigation:
         rospy.loginfo(f"Front min distance: {self.front_distance}")
 
     def move_to_goal(self, goal):
-        goal_x = goal.data[0]
-        goal_y = goal.data[1]
-        goal_z = goal.data[2]
-        goal_w = goal.data[3]
+        goal_x = goal.position.x
+        goal_y = goal.position.y
+        goal_z = goal.orientation.z
+        goal_w = goal.orientation.w
 
         goal_quaternion = (0.0, 0.0, goal_z, goal_w)
         _, _, goal_yaw = tf.transformations.euler_from_quaternion(goal_quaternion)
@@ -119,17 +122,21 @@ class StretchNavigation:
             angle_error = abs(goal_angle - self.global_yaw)
             self.rate.sleep()
 
+        velocity_msg = Twist()
         velocity_msg.angular.z = 0
         self.velocity_publisher.publish(velocity_msg)
 
+        
         while math.sqrt(pow((goal_x - self.global_x), 2) + pow((goal_y - self.global_y), 2)) > self.linear_tolerance:
             rospy.loginfo(f"Distance error: {math.sqrt(pow((goal_x - self.global_x), 2) + pow((goal_y - self.global_y), 2))}")
             self.update_global_pose()
             velocity_msg = Twist()
             if self.front_distance < self.stop_distance:
+                rospy.logwarn("Detected obstacle in movement path!")
                 velocity_msg.linear.x = 0
-            else:
-                velocity_msg.linear.x = 0.2 * math.sqrt(pow((goal_x - self.global_x), 2) + pow((goal_y - self.global_y), 2))
+            elif self.front_distance > self.stop_distance:
+                # velocity_msg.linear.x = 0.15 * math.sqrt(pow((goal_x - self.global_x), 2) + pow((goal_y - self.global_y), 2))
+                velocity_msg.linear.x = 0.2
             velocity_msg.angular.z = 0
             self.velocity_publisher.publish(velocity_msg)
             self.rate.sleep()
@@ -141,13 +148,16 @@ class StretchNavigation:
         while abs(goal_yaw - self.global_yaw) > self.angular_tolerance:
             rospy.loginfo(f"Orientation error: {abs(goal_yaw - self.global_yaw)}")
             self.update_global_pose()
+            velocity_msg = Twist()
             velocity_msg.angular.z = 0.5 * (goal_yaw - self.global_yaw)
             self.velocity_publisher.publish(velocity_msg)
             self.rate.sleep()
 
+        velocity_msg = Twist()
         velocity_msg.angular.z = 0
         self.velocity_publisher.publish(velocity_msg)
-
+        
+        rospy.loginfo("Destination reached")
         self.publish_status("destination reached")
 
 if __name__ == '__main__':
@@ -156,3 +166,4 @@ if __name__ == '__main__':
         rospy.spin()
     except rospy.ROSInterruptException:
         pass
+

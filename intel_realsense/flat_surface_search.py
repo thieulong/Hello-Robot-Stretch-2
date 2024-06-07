@@ -6,7 +6,7 @@ from mpl_toolkits.mplot3d import Axes3D
 margin = 10
 nan_tolerant = 20
 nan_threshold = 10
-flat_threshold = 3
+flat_threshold = 2
 crop_percentage = 0.1  
 
 depth_image = np.loadtxt('depth-array-4.txt', dtype=int)
