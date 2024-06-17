@@ -79,7 +79,7 @@ class PointCloudTransformer:
         pcd.points = o3d.utility.Vector3dVector(points)
 
         # Perform plane segmentation
-        plane_model, inliers = pcd.segment_plane(distance_threshold=0.01, ransac_n=3, num_iterations=1000)
+        plane_model, inliers = pcd.segment_plane(distance_threshold=0.01, ransac_n=3, num_iterations=500)
 
         if len(inliers) == 0:
             rospy.loginfo("Could not find any plane in the point cloud.")
