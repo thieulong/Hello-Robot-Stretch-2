@@ -7,7 +7,6 @@ from geometry_msgs.msg import Point32
 from std_msgs.msg import Header
 import open3d as o3d
 import numpy as np
-from scipy.spatial import ConvexHull
 
 class PointCloudTransformer:
     def __init__(self):
@@ -63,60 +62,25 @@ class PointCloudTransformer:
         for point in inlier_points:
             plane_cloud.points.append(Point32(point[0], point[1], point[2]))
 
-        # Calculate the convex hull of the inlier points
-        hull = ConvexHull(inlier_points[:, :2])  # Use only x and y for 2D convex hull
-
-        # Get the vertices of the convex hull
-        hull_points = inlier_points[hull.vertices]
-
-        # Find the largest inscribed rectangle (simplified approach)
-        min_x = np.min(hull_points[:, 0])
-        max_x = np.max(hull_points[:, 0])
-        min_y = np.min(hull_points[:, 1])
-        max_y = np.max(hull_points[:, 1])
-
-        rectangle_width = max_x - min_x
-        rectangle_height = max_y - min_y
-
-        # Print the size of the rectangle
-        rospy.loginfo(f"Rectangle width: {rectangle_width}, height: {rectangle_height}")
-
-        # Calculate the center of the rectangle
-        center_x = (min_x + max_x) / 2
-        center_y = (min_y + max_y) / 2
-
-        # Select points near the center of the rectangle
-        center_tolerance = 0.1  # Adjust this value as needed
-        center_points = [p for p in inlier_points if 
-                         (center_x - center_tolerance <= p[0] <= center_x + center_tolerance) and 
-                         (center_y - center_tolerance <= p[1] <= center_y + center_tolerance)]
-
-        if len(center_points) == 0:
-            rospy.loginfo("No points found near the center of the rectangle.")
-            return
-
-        # Calculate the height (z-coordinate range) of the center points
-        center_points = np.array(center_points)
-        min_z = np.min(center_points[:, 2])
-        max_z = np.max(center_points[:, 2])
-        height = max_z - min_z
-
-        # Print the height of the center point cloud
-        rospy.loginfo(f"Height of the center point cloud: {height}")
-
-        # Create a PointCloud message for the selected area
-        selected_area_cloud = PointCloud()
-        selected_area_cloud.header = self.pcl2_cloud.header
-        for point in center_points:
-            selected_area_cloud.points.append(Point32(point[0], point[1], point[2]))
-
-        # Publish the selected area point cloud
-        self.selected_area_pub.publish(selected_area_cloud)
-        rospy.loginfo("Published selected area point cloud.")
-
-        # Publish the plane cloud
         self.plane_cloud_pub.publish(plane_cloud)
         rospy.loginfo("Published segmented plane point cloud.")
+
+        # Cluster the inlier points to find different regions
+        labels = np.array(inlier_cloud.cluster_dbscan(eps=0.02, min_points=10, print_progress=True))
+
+        # Find the largest cluster
+        largest_cluster_idx = np.argmax(np.bincount(labels[labels >= 0]))
+        largest_cluster = inlier_points[labels == largest_cluster_idx]
+
+        # Create a PointCloud message for the largest cluster
+        selected_area_cloud = PointCloud()
+        selected_area_cloud.header = self.pcl2_cloud.header
+        for point in largest_cluster:
+            selected_area_cloud.points.append(Point32(point[0], point[1], point[2]))
+
+        # Publish the largest cluster point cloud
+        self.selected_area_pub.publish(selected_area_cloud)
+        rospy.loginfo("Published largest flat area point cloud.")
 
 if __name__ == "__main__":
     rospy.init_node('pointcloud_transformer', anonymous=True)
