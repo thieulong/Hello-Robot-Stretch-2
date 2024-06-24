@@ -14,6 +14,7 @@ class PointCloudTransformer:
         self.pointcloud2_sub = rospy.Subscriber("/camera/depth/color/points", PointCloud2, self.callback_pcl2, queue_size=1)
         self.transformed_cloud_pub = rospy.Publisher("/transformed_cloud", PointCloud, queue_size=1)
         self.plane_cloud_pub = rospy.Publisher("/plain_surface", PointCloud, queue_size=1)
+        self.selected_area_pub = rospy.Publisher("/selected_area", PointCloud, queue_size=1)
         self.pcl2_cloud = None
         self.listener = tf.TransformListener(True, rospy.Duration(10.0))
         rospy.loginfo('Publishing transformed PointCloud. Use RViz to visualize')
@@ -80,6 +81,40 @@ class PointCloudTransformer:
         # Print the size of the rectangle
         rospy.loginfo(f"Rectangle width: {rectangle_width}, height: {rectangle_height}")
 
+        # Calculate the center of the rectangle
+        center_x = (min_x + max_x) / 2
+        center_y = (min_y + max_y) / 2
+
+        # Select points near the center of the rectangle
+        center_tolerance = 0.1  # Adjust this value as needed
+        center_points = [p for p in inlier_points if 
+                         (center_x - center_tolerance <= p[0] <= center_x + center_tolerance) and 
+                         (center_y - center_tolerance <= p[1] <= center_y + center_tolerance)]
+
+        if len(center_points) == 0:
+            rospy.loginfo("No points found near the center of the rectangle.")
+            return
+
+        # Calculate the height (z-coordinate range) of the center points
+        center_points = np.array(center_points)
+        min_z = np.min(center_points[:, 2])
+        max_z = np.max(center_points[:, 2])
+        height = max_z - min_z
+
+        # Print the height of the center point cloud
+        rospy.loginfo(f"Height of the center point cloud: {height}")
+
+        # Create a PointCloud message for the selected area
+        selected_area_cloud = PointCloud()
+        selected_area_cloud.header = self.pcl2_cloud.header
+        for point in center_points:
+            selected_area_cloud.points.append(Point32(point[0], point[1], point[2]))
+
+        # Publish the selected area point cloud
+        self.selected_area_pub.publish(selected_area_cloud)
+        rospy.loginfo("Published selected area point cloud.")
+
+        # Publish the plane cloud
         self.plane_cloud_pub.publish(plane_cloud)
         rospy.loginfo("Published segmented plane point cloud.")
 
