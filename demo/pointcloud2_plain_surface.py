@@ -7,6 +7,7 @@ from geometry_msgs.msg import Point32
 from std_msgs.msg import Header
 import open3d as o3d
 import numpy as np
+from scipy.spatial import ConvexHull
 
 class PointCloudTransformer:
     def __init__(self):
@@ -56,19 +57,31 @@ class PointCloudTransformer:
         inlier_cloud = pcd.select_by_index(inliers)
         inlier_points = np.asarray(inlier_cloud.points)
 
-        filtered_points = inlier_points[inlier_points[:, 2] > 0.5]
-
-        if len(filtered_points) == 0:
-            rospy.loginfo("No points found with z > 0.5m in the segmented plane point cloud.")
-            return
-
         plane_cloud = PointCloud()
         plane_cloud.header = self.pcl2_cloud.header
-        for point in filtered_points:
+        for point in inlier_points:
             plane_cloud.points.append(Point32(point[0], point[1], point[2]))
 
+        # Calculate the convex hull of the inlier points
+        hull = ConvexHull(inlier_points[:, :2])  # Use only x and y for 2D convex hull
+
+        # Get the vertices of the convex hull
+        hull_points = inlier_points[hull.vertices]
+
+        # Find the largest inscribed rectangle (simplified approach)
+        min_x = np.min(hull_points[:, 0])
+        max_x = np.max(hull_points[:, 0])
+        min_y = np.min(hull_points[:, 1])
+        max_y = np.max(hull_points[:, 1])
+
+        rectangle_width = max_x - min_x
+        rectangle_height = max_y - min_y
+
+        # Print the size of the rectangle
+        rospy.loginfo(f"Rectangle width: {rectangle_width}, height: {rectangle_height}")
+
         self.plane_cloud_pub.publish(plane_cloud)
-        rospy.loginfo("Published segmented plane point cloud with z > 0.5m.")
+        rospy.loginfo("Published segmented plane point cloud.")
 
 if __name__ == "__main__":
     rospy.init_node('pointcloud_transformer', anonymous=True)
