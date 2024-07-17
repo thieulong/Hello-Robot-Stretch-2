@@ -87,6 +87,22 @@ class PointCloudTransformer:
         self.selected_area_pub.publish(selected_area_cloud)
         rospy.loginfo("Published largest flat area point cloud.")
 
+        # Calculate the centroid of the selected area points
+        selected_points = np.array([[p.x, p.y, p.z] for p in selected_area_cloud.points])
+        centroid = np.mean(selected_points, axis=0)
+
+        # Find the point closest to the centroid
+        closest_point_idx = np.argmin(np.linalg.norm(selected_points - centroid, axis=1))
+        closest_point = selected_points[closest_point_idx]
+
+        # Print the information of the closest point
+        rospy.loginfo(f"Center point information: x={closest_point[0]}, y={closest_point[1]}, z={closest_point[2]}")
+        rospy.loginfo(f"Height of the centroid point: {closest_point[2]}")
+
+        # Calculate the distance from the robot to the centroid point
+        distance = np.linalg.norm(centroid)
+        rospy.loginfo(f"Distance from the robot to the centroid point: {distance}")
+
 if __name__ == "__main__":
     rospy.init_node('pointcloud_transformer', anonymous=True)
     PCT = PointCloudTransformer()
