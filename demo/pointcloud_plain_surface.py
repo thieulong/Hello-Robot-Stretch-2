@@ -62,6 +62,8 @@ class PointCloudTransformer:
         for point in inlier_points:
             plane_cloud.points.append(Point32(point[0], point[1], point[2]))
 
+        plane_cloud = self.transform_pointcloud(plane_cloud)
+
         self.plane_cloud_pub.publish(plane_cloud)
         rospy.loginfo("Published segmented plane point cloud.")
 
@@ -77,6 +79,9 @@ class PointCloudTransformer:
         selected_area_cloud.header = self.pcl2_cloud.header
         for point in largest_cluster:
             selected_area_cloud.points.append(Point32(point[0], point[1], point[2]))
+
+        selected_area_cloud = self.transform_pointcloud(selected_area_cloud)
+        rospy.loginfo(f"Total pointclouds: {len(selected_area_cloud.points)}")
 
         # Publish the largest cluster point cloud
         self.selected_area_pub.publish(selected_area_cloud)
