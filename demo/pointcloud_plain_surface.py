@@ -97,11 +97,11 @@ class PointCloudTransformer:
 
         # Print the information of the closest point
         rospy.loginfo(f"Center point information: x={closest_point[0]}, y={closest_point[1]}, z={closest_point[2]}")
-        rospy.loginfo(f"Height of the centroid point: {closest_point[2]}")
+        rospy.loginfo(f"Height of the centroid point: {round(closest_point[2],2)}")
 
         # Calculate the distance from the robot to the centroid point
         distance = np.linalg.norm(centroid)
-        rospy.loginfo(f"Distance from the robot to the centroid point: {distance}")
+        rospy.loginfo(f"Distance from the robot to the centroid point: {round(distance, 2)}")
 
 if __name__ == "__main__":
     rospy.init_node('pointcloud_transformer', anonymous=True)
