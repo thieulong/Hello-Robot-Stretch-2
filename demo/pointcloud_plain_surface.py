@@ -82,16 +82,6 @@ class PointCloudTransformer:
         self.selected_area_pub.publish(selected_area_cloud)
         rospy.loginfo("Published largest flat area point cloud.")
 
-        # Find the centroid of the largest cluster
-        centroid = np.mean(largest_cluster, axis=0)
-
-        # Find the point closest to the centroid
-        closest_point_idx = np.argmin(np.linalg.norm(largest_cluster - centroid, axis=1))
-        closest_point = largest_cluster[closest_point_idx]
-
-        # Print the information of the closest point
-        rospy.loginfo(f"Center point information: x={closest_point[0]}, y={closest_point[1]}, z={closest_point[2]}")
-
 if __name__ == "__main__":
     rospy.init_node('pointcloud_transformer', anonymous=True)
     PCT = PointCloudTransformer()
