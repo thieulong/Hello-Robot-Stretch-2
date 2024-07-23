@@ -3,7 +3,7 @@ import rospy
 import tf
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist, Pose, PoseStamped, Point, Quaternion, Pose
-from std_msgs.msg import Float32MultiArray, String
+from std_msgs.msg import Float32MultiArray, String, Bool
 from tf.transformations import euler_from_quaternion, quaternion_from_euler
 from sensor_msgs.msg import LaserScan
 import math
@@ -16,6 +16,11 @@ class StretchNavigation:
         self.velocity_publisher = rospy.Publisher('/stretch/cmd_vel', Twist, queue_size=10)
         self.status_publisher = rospy.Publisher('/stretch/status', String, queue_size=10)
         
+        self.home_robot_publisher = rospy.Publisher("/home_robot", Bool, queue_size=10)
+        self.release_object_publisher = rospy.Publisher("/release_object", Bool, queue_size=10)
+        self.give_object_publisher = rospy.Publisher("/give_object", Bool, queue_size=10)
+        
+        self.mode_subscriber = rospy.Subscriber('/mode', String, self.select_mode)
         self.odom_subscriber = rospy.Subscriber('/odom', Odometry, self.update_odometry_pose)
         self.goal_subscriber = rospy.Subscriber('/destination', Pose, self.move_to_goal)
         self.lidar_subscriber = rospy.Subscriber('/scan_filtered', LaserScan, self.lidar_callback)
@@ -40,11 +45,16 @@ class StretchNavigation:
         self.stop_distance = 0.3
         self.front_distance = 0
 
+        self.mode = None
+
     def publish_status(self, status_message):
         status_msg = String()
         status_msg.data = status_message
         self.status_publisher.publish(status_msg)
         rospy.loginfo(f"Status published: {status_message}")
+
+    def select_mode(self, msg):
+        self.mode = str(msg)
 
     def update_odometry_pose(self, msg):
         position = msg.pose.pose.position
@@ -89,24 +99,9 @@ class StretchNavigation:
         all_points = [r if (not math.isnan(r)) else numpy.inf for r in msg.ranges]
         front_points = [r * math.sin(theta) if (theta < -2.5 or theta > 2.5) else numpy.inf for r,theta in zip(msg.ranges, angles)]
         front_ranges = [r if abs(y) < self.extent else numpy.inf for r,y in zip(msg.ranges, front_points)]
+        min_front = min(front_ranges)
 
-        middle_index = len(front_ranges) // 2
-        middle_value = front_ranges[middle_index]
-        i = 1
-
-        while numpy.isinf(middle_value):
-            left_index = middle_index - i
-            if left_index >= 0:
-                middle_value = front_ranges[left_index]
-
-            if numpy.isinf(middle_value):
-                right_index = middle_index + i
-                if right_index < len(front_ranges):
-                    middle_value = front_ranges[right_index]
-
-            i += 1
-
-        self.front_distance = middle_value
+        self.front_distance = min_front
         rospy.loginfo(f"Front min distance: {self.front_distance}")
 
     def move_to_goal(self, goal):
@@ -173,6 +168,13 @@ class StretchNavigation:
         
         rospy.loginfo("Destination reached")
         self.publish_status("destination reached")
+
+        if self.mode == "indirect":
+            self.release_object_publisher.publish(True)
+        elif self.mode == "direct":
+            self.give_object_publisher.publish(True)
+        elif self.mode == "home":
+            self.home_robot_publisher.publish(True)
 
 if __name__ == '__main__':
     try:
