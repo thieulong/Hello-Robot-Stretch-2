@@ -19,7 +19,7 @@ open_gripper_pub = rospy.Publisher("/grasp_detect", Bool, queue_size=1)
 image_pub = rospy.Publisher('/grasping_detection/image', Image, queue_size=10)
 bridge = CvBridge()
 
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(4)
 cap.set(cv2.CAP_PROP_BRIGHTNESS, 0)
 
 mpHands = mp.solutions.hands
@@ -113,10 +113,10 @@ def detect(model, lm_list):
     if label == "grasped":
         if grasped_start_time is None:
             grasped_start_time = time.time()
-        elif time.time() - grasped_start_time >= 2:
+        elif time.time() - grasped_start_time >= 1.5:
             open_gripper_pub.publish(True)
             rospy.loginfo("Release object")
-            grasped_start_time = None
+            
     else:
         grasped_start_time = None
 
@@ -166,3 +166,4 @@ while not rospy.is_shutdown():
 
 cap.release()
 cv2.destroyAllWindows()
+
