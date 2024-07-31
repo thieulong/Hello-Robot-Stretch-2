@@ -1,32 +1,72 @@
----
+k#!/usr/bin/env python3
+
+import rospy
+from geometry_msgs.msg import PoseWithCovarianceStamped
+
+def set_initial_pose():
+    rospy.init_node('set_initial_pose')
+    
+    # Create a publisher to the /initialpose topic
+    pub = rospy.Publisher('/initialpose', PoseWithCovarianceStamped, queue_size=10)
+    
+    # Wait for the publisher to be ready
+    rospy.sleep(1)
+    
+    # Create the initial pose message
+    initial_pose = PoseWithCovarianceStamped()
+    initial_pose.header.stamp = rospy.Time.now()
+    initial_pose.header.frame_id = 'map'
+    
+    # Set position
+    initial_pose.pose.pose.position.x = 3.807706613503741
+    initial_pose.pose.pose.position.y = -5.249258451730942
+    initial_pose.pose.pose.position.z = 0.0
+    
+    # Set orientation
+    initial_pose.pose.pose.orientation.x = 0.0
+    initial_pose.pose.pose.orientation.y = 0.0
+    initial_pose.pose.pose.orientation.z = 0.997870545933206
+    initial_pose.pose.pose.orientation.w = 0.06522555909277755
+    
+    # Set covariance - you can adjust this based on your requirements
+    initial_pose.pose.covariance = [0.2700918801882217, 0.006663300544548889, 0.0, 0.0, 0.0, 0.0, 0.006663300544552442, 0.24264100429994429, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.06776190820779615]
+    
+    # Publish the initial pose message
+    pub.publish(initial_pose)
+    rospy.loginfo("Initial pose set to: x = {}, y = {}, z = {}, orientation: x = {}, y = {}, z = {}, w = {}".format(
+        initial_pose.pose.pose.position.x,
+        initial_pose.pose.pose.position.y,
+        initial_pose.pose.pose.position.z,
+        initial_pose.pose.pose.orientation.x,
+        initial_pose.pose.pose.orientation.y,
+        initial_pose.pose.pose.orientation.z,
+        initial_pose.pose.pose.orientation.w))
+    
+    rospy.sleep(1)
+
+if __name__ == '__main__':
+    try:
+        set_initial_pose()
+    except rospy.ROSInterruptException:
+        pass
+
+'''
 header: 
-  seq: 13316
+  seq: 33
   stamp: 
-    secs: 1714719403
-    nsecs: 361705541
-  frame_id: "odom"
-child_frame_id: "base_link"
+    secs: 1722410999
+    nsecs: 706534510
+  frame_id: "map"
 pose: 
   pose: 
     position: 
-      x: -0.08246255511628955
-      y: 0.465472404078218
+      x: 1.4996031652831114
+      y: -5.417107218441432
       z: 0.0
     orientation: 
-      x: -0.0
-      y: 0.0
-      z: 0.9384283859992154
-      w: -0.3454738258550241
-  covariance: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-twist: 
-  twist: 
-    linear: 
-      x: 3.3488243177109236e-05
-      y: 0.0
-      z: 0.0
-    angular: 
       x: 0.0
       y: 0.0
-      z: 0.0010873693621127917
-  covariance: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
----
+      z: -0.5832725222582447
+      w: 0.8122765322096321
+  covariance: [0.2626271733880512, 0.0008285350289511939, 0.0, 0.0, 0.0, 0.0, 0.0008285350289511939, 0.26979911314415617, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0649062547431464]
+'''
