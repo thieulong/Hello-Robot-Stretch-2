@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Site BuildName="(empty)"
+	BuildStamp="20240730-0326-Experimental"
+	Name="stretch-re2-2069"
+	Generator="ctest-3.26.4"
+	CompilerName="/usr/bin/c++"
+	CompilerVersion="9.4.0"
+	OSName="Linux"
+	Hostname="stretch-re2-2069"
+	OSRelease="5.15.0-117-generic"
+	OSVersion="#127~20.04.1-Ubuntu SMP Thu Jul 11 15:36:12 UTC 2024"
+	OSPlatform="x86_64"
+	Is64Bits="1"
+	VendorString="GenuineIntel"
+	VendorID="Intel Corporation"
+	FamilyID="6"
+	ModelID="142"
+	ProcessorCacheSize="6144"
+	NumberOfLogicalCPU="8"
+	NumberOfPhysicalCPU="4"
+	TotalVirtualMemory="2047"
+	TotalPhysicalMemory="15857"
+	LogicalProcessorsPerPhysical="2"
+	ProcessorClockFrequency="3603.19"
+	>
+	<Testing>
+		<StartDateTime>Jul 30 15:56 AEST</StartDateTime>
+		<StartTestTime>1722318981</StartTestTime>
+		<TestList/>
+		<EndDateTime>Jul 30 15:56 AEST</EndDateTime>
+		<EndTestTime>1722318981</EndTestTime>
+		<ElapsedMinutes>0</ElapsedMinutes>
+	</Testing>
+</Site>

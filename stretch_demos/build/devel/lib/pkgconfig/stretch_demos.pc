@@ -1,0 +1,8 @@
+prefix=/home/hello-robot/catkin_ws/src/stretch_ros/stretch_demos/build/devel
+
+Name: stretch_demos
+Description: Description of stretch_demos
+Version: 0.2.0
+Cflags: -I/home/hello-robot/catkin_ws/src/stretch_ros/stretch_demos/build/devel/include
+Libs: -L${prefix}/lib 
+Requires: 
